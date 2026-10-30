@@ -10,6 +10,7 @@ import com.vocabguard.VocabGuardApp
 import com.vocabguard.data.local.GuardedAppEntity
 import com.vocabguard.data.repository.GuardedAppsRepository
 import com.vocabguard.data.repository.InstalledApp
+import com.vocabguard.sound.SoundPlayer
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -78,6 +79,7 @@ class AppsViewModel(private val repository: GuardedAppsRepository) : ViewModel()
         val added = repository.addApps(chosen)
         closePicker()
         _events.send(UiEvent.Navigate(Route.Home, DashboardTab.Apps))
+        _events.send(UiEvent.PlaySound(SoundPlayer.Sound.Correct))
         _events.send(UiEvent.Message(if (added == 1) "Now guarding ${chosen.first().label}." else "Now guarding $added more apps."))
     }
 

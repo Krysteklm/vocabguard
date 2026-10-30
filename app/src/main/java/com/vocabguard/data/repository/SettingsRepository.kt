@@ -56,6 +56,7 @@ data class GuardSettings(
     val today: DailyStats = DailyStats(),
     /** Multiplies the whole UI (layout and text) on top of the system font size. */
     val uiScale: Float = 1f,
+    val soundsEnabled: Boolean = true,
     val autoWords: AutoWordsSettings = AutoWordsSettings(),
 )
 
@@ -71,6 +72,7 @@ class SettingsRepository(
         val QUIZZES_SOLVED = intPreferencesKey("stats_quizzes_solved")
         val MINDFUL_EXITS = intPreferencesKey("stats_mindful_exits")
         val UI_SCALE = floatPreferencesKey("ui_scale")
+        val SOUNDS_ENABLED = booleanPreferencesKey("sounds_enabled")
         val AUTO_WORDS_ENABLED = booleanPreferencesKey("auto_words_enabled")
         val AUTO_WORDS_PER_DAY = intPreferencesKey("auto_words_per_day")
         val AUTO_WORDS_LEVEL = stringPreferencesKey("auto_words_level")
@@ -90,11 +92,16 @@ class SettingsRepository(
         .distinctUntilChanged()
 
     val uiScale: Flow<Float> = settings.map { it.uiScale }.distinctUntilChanged()
+    val soundsEnabled: Flow<Boolean> = settings.map { it.soundsEnabled }.distinctUntilChanged()
 
     suspend fun current(): GuardSettings = settings.first()
 
     suspend fun setUiScale(scale: Float) {
         dataStore.edit { it[Keys.UI_SCALE] = scale.coerceIn(MIN_UI_SCALE, MAX_UI_SCALE) }
+    }
+
+    suspend fun setSoundsEnabled(enabled: Boolean) {
+        dataStore.edit { it[Keys.SOUNDS_ENABLED] = enabled }
     }
 
     suspend fun setAutoWordsEnabled(enabled: Boolean) {
@@ -160,6 +167,7 @@ class SettingsRepository(
                 DailyStats()
             },
             uiScale = (this[Keys.UI_SCALE] ?: 1f).coerceIn(MIN_UI_SCALE, MAX_UI_SCALE),
+            soundsEnabled = this[Keys.SOUNDS_ENABLED] ?: true,
             autoWords = AutoWordsSettings(
                 enabled = this[Keys.AUTO_WORDS_ENABLED] ?: false,
                 perDay = this[Keys.AUTO_WORDS_PER_DAY] ?: 5,

@@ -18,6 +18,7 @@ import com.vocabguard.data.repository.WordRepository
 import com.vocabguard.data.repository.WordResult
 import com.vocabguard.domain.ImportPreview
 import com.vocabguard.domain.VocabImportParser
+import com.vocabguard.sound.SoundPlayer
 import com.vocabguard.util.FileTooLargeException
 import com.vocabguard.util.NamedText
 import com.vocabguard.util.TextFileReader
@@ -135,7 +136,10 @@ class WordsViewModel(
 
     fun addWord(deckId: Long, foreign: String, translation: String) = launchSafely("Couldn’t save the word.") {
         when (val result = repository.addWord(deckId, foreign, translation)) {
-            WordResult.Success -> _addFormVersion.update { it + 1 }
+            WordResult.Success -> {
+                _addFormVersion.update { it + 1 }
+                _events.send(UiEvent.PlaySound(SoundPlayer.Sound.Tap))
+            }
             WordResult.Duplicate -> _events.send(UiEvent.Message("“${foreign.trim()}” is already in this deck."))
             is WordResult.Invalid -> _events.send(UiEvent.Message(result.reason))
         }
@@ -258,6 +262,7 @@ class WordsViewModel(
                         val skippedNote = if (s.alreadyThere > 0) " ${s.alreadyThere} were already there." else ""
                         closeImport()
                         _events.send(UiEvent.Navigate(Route.Deck(s.deckId)))
+                        _events.send(UiEvent.PlaySound(SoundPlayer.Sound.Correct))
                         _events.send(UiEvent.Message("Added ${s.added} words to “${s.deckName}”.$skippedNote"))
                     }
                     is ImportResult.Invalid -> _importState.update { it.copy(isImporting = false, error = result.reason) }

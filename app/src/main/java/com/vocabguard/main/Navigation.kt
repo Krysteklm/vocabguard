@@ -1,6 +1,7 @@
 package com.vocabguard.main
 
 import androidx.compose.runtime.saveable.Saver
+import com.vocabguard.sound.SoundPlayer
 
 enum class DashboardTab { Status, Words, Apps, Settings }
 
@@ -35,4 +36,5 @@ sealed interface UiEvent {
     data class Message(val text: String) : UiEvent
     data class Undoable(val text: String, val undo: () -> Unit) : UiEvent
     data class Navigate(val route: Route, val tab: DashboardTab? = null) : UiEvent
+    data class PlaySound(val sound: SoundPlayer.Sound) : UiEvent
 }

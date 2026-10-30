@@ -16,6 +16,7 @@ import com.vocabguard.data.repository.SettingsRepository
 import com.vocabguard.data.repository.WordRepository
 import com.vocabguard.domain.CefrLevel
 import com.vocabguard.domain.QuizMode
+import com.vocabguard.sound.SoundPlayer
 import com.vocabguard.util.PermissionUtils
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
@@ -47,6 +48,7 @@ data class MainUiState(
     val activeWordCount: Int = 0,
     val permissions: PermissionState = PermissionState(),
     val uiScale: Float = 1f,
+    val soundsEnabled: Boolean = true,
     val autoWords: AutoWordsSettings = AutoWordsSettings(),
     val estimatedLevel: CefrLevel? = null,
     val isAddingWords: Boolean = false,
@@ -86,6 +88,7 @@ class MainViewModel(
             activeWordCount = activeWords,
             permissions = perms,
             uiScale = settings.uiScale,
+            soundsEnabled = settings.soundsEnabled,
             autoWords = settings.autoWords,
             estimatedLevel = level,
             isAddingWords = adding,
@@ -121,6 +124,10 @@ class MainViewModel(
 
     fun setUiScale(scale: Float) = launchSafely("Couldn’t change the display size.") {
         settingsRepository.setUiScale(scale)
+    }
+
+    fun setSoundsEnabled(enabled: Boolean) = launchSafely("Couldn’t change sounds.") {
+        settingsRepository.setSoundsEnabled(enabled)
     }
 
     // ---- Auto-add words ----------------------------------------------------------------------
@@ -176,6 +183,7 @@ class MainViewModel(
 
     private suspend fun announce(added: Int, level: CefrLevel) {
         val words = if (added == 1) "1 new ${level.name} word" else "$added new ${level.name} words"
+        _events.send(UiEvent.PlaySound(SoundPlayer.Sound.Correct))
         _events.send(UiEvent.Message("Added $words to “${AutoWordsRepository.AUTO_DECK_NAME}”."))
     }
 

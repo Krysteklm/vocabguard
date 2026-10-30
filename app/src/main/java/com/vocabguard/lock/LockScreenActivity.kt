@@ -8,10 +8,17 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vocabguard.appContainer
+import com.vocabguard.sound.LocalSoundPlayer
+import com.vocabguard.sound.SoundPlayer
+import kotlinx.coroutines.launch
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.vocabguard.ui.theme.VocabGuardTheme
@@ -25,6 +32,7 @@ class LockScreenActivity : ComponentActivity() {
 
     private val viewModel: LockScreenViewModel by viewModels { LockScreenViewModel.Factory }
     private var leavingIntentionally = false
+    private lateinit var soundPlayer: SoundPlayer
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -32,16 +40,24 @@ class LockScreenActivity : ComponentActivity() {
         enterImmersiveMode()
         viewModel.bindTarget(intent?.getStringExtra(EXTRA_TARGET_PACKAGE))
 
+        soundPlayer = SoundPlayer(applicationContext)
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                appContainer.settingsRepository.soundsEnabled.collect { soundPlayer.enabled = it }
+            }
+        }
         val uiScaleFlow = appContainer.settingsRepository.uiScale
         setContent {
             val uiScale by uiScaleFlow.collectAsStateWithLifecycle(initialValue = null)
             uiScale?.let { scale ->
-                VocabGuardTheme(uiScale = scale) {
-                    LockScreenRoute(
-                        viewModel = viewModel,
-                        onUnlocked = ::openTargetApp,
-                        onExitHome = ::goHome,
-                    )
+                CompositionLocalProvider(LocalSoundPlayer provides soundPlayer) {
+                    VocabGuardTheme(uiScale = scale) {
+                        LockScreenRoute(
+                            viewModel = viewModel,
+                            onUnlocked = ::openTargetApp,
+                            onExitHome = ::goHome,
+                        )
+                    }
                 }
             }
         }
@@ -51,6 +67,11 @@ class LockScreenActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         viewModel.bindTarget(intent.getStringExtra(EXTRA_TARGET_PACKAGE))
+    }
+
+    override fun onDestroy() {
+        soundPlayer.release()
+        super.onDestroy()
     }
 
     override fun onResume() {

@@ -41,6 +41,7 @@ import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material.icons.rounded.ThumbsUpDown
 import androidx.compose.material.icons.rounded.TextIncrease
+import androidx.compose.material.icons.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.Translate
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
@@ -71,6 +72,8 @@ import com.vocabguard.data.repository.AutoWordsSettings
 import com.vocabguard.data.repository.SettingsRepository
 import com.vocabguard.domain.CefrLevel
 import com.vocabguard.domain.QuizMode
+import com.vocabguard.sound.LocalSoundPlayer
+import com.vocabguard.sound.SoundPlayer
 import com.vocabguard.ui.components.PrimaryButton
 import com.vocabguard.ui.components.SecondaryButton
 import com.vocabguard.ui.components.SettingRow
@@ -114,7 +117,13 @@ fun SettingsScreen(state: MainUiState, viewModel: MainViewModel) {
             modifier = Modifier.appearOnce(1),
         )
 
-        VGCard(modifier = Modifier.appearOnce(2)) {
+        SoundsCard(
+            enabled = state.soundsEnabled,
+            onChange = viewModel::setSoundsEnabled,
+            modifier = Modifier.appearOnce(2),
+        )
+
+        VGCard(modifier = Modifier.appearOnce(3)) {
             Text("Quiz types", style = MaterialTheme.typography.titleMedium, color = VGColors.TextPrimary)
             Text(
                 "The lock screen mixes the types you turn on.",
@@ -132,9 +141,9 @@ fun SettingsScreen(state: MainUiState, viewModel: MainViewModel) {
             }
         }
 
-        AutoWordsCard(state = state, viewModel = viewModel, modifier = Modifier.appearOnce(3))
+        AutoWordsCard(state = state, viewModel = viewModel, modifier = Modifier.appearOnce(4))
 
-        Column(Modifier.appearOnce(4), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column(Modifier.appearOnce(5), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             PermissionsSection(state.permissions)
         }
     }
@@ -172,6 +181,52 @@ private fun DisplaySizeCard(current: Float, onSelect: (Float) -> Unit, modifier:
                     shape = RoundedCornerShape(12.dp),
                     colors = chipColors(),
                 )
+            }
+        }
+    }
+}
+
+@Suppress("DEPRECATION") // Icons.Rounded.VolumeUp: the AutoMirrored variant isn't in every icons version
+@Composable
+private fun SoundsCard(enabled: Boolean, onChange: (Boolean) -> Unit, modifier: Modifier = Modifier) {
+    val player = LocalSoundPlayer.current
+    VGCard(modifier = modifier) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Rounded.VolumeUp, contentDescription = null, tint = VGColors.Primary)
+            Spacer(Modifier.width(12.dp))
+            SettingRow(
+                title = "Sounds",
+                subtitle = "Soft chimes for right answers and unlocks. Silent when your phone is on silent or vibrate.",
+                modifier = Modifier.weight(1f),
+            ) {
+                VGSwitch(
+                    checked = enabled,
+                    onCheckedChange = { on ->
+                        onChange(on)
+                        if (on) player?.play(SoundPlayer.Sound.Correct, force = true)
+                    },
+                )
+            }
+        }
+        AnimatedVisibility(
+            visible = enabled,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut(),
+        ) {
+            Row(Modifier.padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(
+                    "Right" to SoundPlayer.Sound.Correct,
+                    "Wrong" to SoundPlayer.Sound.Wrong,
+                    "Unlock" to SoundPlayer.Sound.Unlock,
+                ).forEach { (label, sound) ->
+                    FilterChip(
+                        selected = false,
+                        onClick = { player?.play(sound, force = true) },
+                        label = { Text("Play “$label”") },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = chipColors(),
+                    )
+                }
             }
         }
     }

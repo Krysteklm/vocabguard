@@ -94,6 +94,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vocabguard.domain.QuizQuestion
+import com.vocabguard.sound.LocalSoundPlayer
+import com.vocabguard.sound.SoundPlayer
 import com.vocabguard.ui.components.rememberPressScale
 import com.vocabguard.ui.components.rememberReducedMotion
 import com.vocabguard.ui.theme.VGColors
@@ -153,6 +155,17 @@ fun LockScreenContent(
     modifier: Modifier = Modifier,
 ) {
     val haptics = LocalHapticFeedback.current
+    val soundPlayer = LocalSoundPlayer.current
+    // One sound per answer. The final correct answer plays the unlock arpeggio instead of the chime.
+    LaunchedEffect(state.questionNumber, state.feedback) {
+        when (state.feedback) {
+            AnswerFeedback.Correct, AnswerFeedback.Almost -> soundPlayer?.play(
+                if (state.streak >= state.requiredStreak) SoundPlayer.Sound.Unlock else SoundPlayer.Sound.Correct,
+            )
+            AnswerFeedback.Wrong -> soundPlayer?.play(SoundPlayer.Sound.Wrong)
+            AnswerFeedback.None -> Unit
+        }
+    }
     LaunchedEffect(state.shakeTrigger) {
         if (state.shakeTrigger > 0) haptics.performHapticFeedback(HapticFeedbackType.LongPress)
     }

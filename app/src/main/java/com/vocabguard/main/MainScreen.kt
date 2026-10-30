@@ -46,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.vocabguard.sound.LocalSoundPlayer
 import com.vocabguard.ui.components.rememberReducedMotion
 import com.vocabguard.ui.theme.VGColors
 import kotlinx.coroutines.flow.merge
@@ -101,6 +102,7 @@ fun MainScreen(
 ) {
     val mainState by mainViewModel.uiState.collectAsStateWithLifecycle()
     val reduced = rememberReducedMotion()
+    val soundPlayer = LocalSoundPlayer.current
     val snackbarHostState = remember { SnackbarHostState() }
     var route by rememberSaveable(stateSaver = RouteSaver) { mutableStateOf<Route>(Route.Home) }
     var tab by rememberSaveable { mutableStateOf(DashboardTab.Status) }
@@ -138,6 +140,7 @@ fun MainScreen(
                     route = event.route
                     event.tab?.let { tab = it }
                 }
+                is UiEvent.PlaySound -> soundPlayer?.play(event.sound)
             }
         }
     }

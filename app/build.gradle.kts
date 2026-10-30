@@ -25,8 +25,8 @@ android {
         minSdk = 26
         targetSdk = 35
         // CI passes -PversionCode=<run number> so every build is a newer, installable update.
-        versionCode = (project.findProperty("versionCode") as String?)?.toIntOrNull() ?: 3
-        versionName = "1.2.0"
+        versionCode = (project.findProperty("versionCode") as String?)?.toIntOrNull() ?: 4
+        versionName = "1.3.0"
     }
 
     signingConfigs {

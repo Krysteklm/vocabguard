@@ -1,5 +1,0 @@
-<resources>
-    <string name="app_name">VocabGuard</string>
-    <string name="accessibility_service_label">VocabGuard blocker</string>
-    <string name="accessibility_service_description">Notices when TikTok opens and shows a short vocabulary quiz first. VocabGuard doesn’t read screen content, what you type, or anything inside other apps.</string>
-</resources>

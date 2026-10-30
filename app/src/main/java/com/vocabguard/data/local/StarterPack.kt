@@ -1,0 +1,88 @@
+package com.vocabguard.data.local
+
+/**
+ * High-frequency German → English starter deck. Also used as an in-memory fallback if the
+ * database ever can't produce a valid 3-option question, so the lock screen can never dead-end.
+ */
+object StarterPack {
+    const val DECK_ID = 1L
+    const val DECK_NAME = "German starter"
+
+    val words: List<Pair<String, String>> = listOf(
+        // Nouns
+        "der Hund" to "the dog",
+        "die Katze" to "the cat",
+        "das Haus" to "the house",
+        "das Wasser" to "the water",
+        "das Brot" to "the bread",
+        "der Apfel" to "the apple",
+        "die Zeit" to "time",
+        "der Tag" to "the day",
+        "die Nacht" to "the night",
+        "die Woche" to "the week",
+        "das Jahr" to "the year",
+        "die Arbeit" to "work",
+        "die Stadt" to "the city",
+        "der Zug" to "the train",
+        "das Buch" to "the book",
+        "der Freund" to "the friend",
+        "die Familie" to "the family",
+        "das Kind" to "the child",
+        "die Schule" to "the school",
+        "der Weg" to "the way",
+        "die Welt" to "the world",
+        "das Leben" to "life",
+        "die Frage" to "the question",
+        "die Antwort" to "the answer",
+        "das Geld" to "money",
+        "die Tür" to "the door",
+        "das Fenster" to "the window",
+        "der Schlüssel" to "the key",
+        "die Straße" to "the street",
+        "der Himmel" to "the sky",
+        "die Sonne" to "the sun",
+        "der Mond" to "the moon",
+        // Verbs
+        "gehen" to "to go",
+        "kommen" to "to come",
+        "sehen" to "to see",
+        "sprechen" to "to speak",
+        "lernen" to "to learn",
+        "verstehen" to "to understand",
+        "vergessen" to "to forget",
+        "versuchen" to "to try",
+        "brauchen" to "to need",
+        "glauben" to "to believe",
+        "warten" to "to wait",
+        "finden" to "to find",
+        "bleiben" to "to stay",
+        "schlafen" to "to sleep",
+        "essen" to "to eat",
+        "trinken" to "to drink",
+        "kaufen" to "to buy",
+        "helfen" to "to help",
+        "fragen" to "to ask",
+        "wissen" to "to know (a fact)",
+        // Adjectives & adverbs
+        "schnell" to "fast",
+        "langsam" to "slow",
+        "groß" to "big",
+        "klein" to "small",
+        "schön" to "beautiful",
+        "wichtig" to "important",
+        "einfach" to "simple",
+        "schwierig" to "difficult",
+        "müde" to "tired",
+        "glücklich" to "happy",
+        "immer" to "always",
+        "nie" to "never",
+        "oft" to "often",
+        "heute" to "today",
+        "morgen" to "tomorrow",
+        "gestern" to "yesterday",
+        "vielleicht" to "maybe",
+        "genug" to "enough",
+        "zusammen" to "together",
+        "allein" to "alone",
+    )
+}

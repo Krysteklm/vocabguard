@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Window-state changes only, no window content: VocabGuard needs to know WHICH app is in
+     front, never WHAT is on screen. Not filtered by package so we can tell when the user
+     leaves TikTok (which is what makes re-entry detection work). -->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeWindowStateChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagDefault"
+    android:canRetrieveWindowContent="false"
+    android:description="@string/accessibility_service_description"
+    android:isAccessibilityTool="false"
+    android:notificationTimeout="80"
+    android:settingsActivity="com.vocabguard.main.MainActivity" />

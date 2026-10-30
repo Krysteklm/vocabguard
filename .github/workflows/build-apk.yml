@@ -27,7 +27,7 @@ jobs:
             exit 1
           fi
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
@@ -55,7 +55,15 @@ jobs:
         run: gradle assembleDebug -PversionCode=${{ github.run_number }}
 
       - name: Name the APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk VocabGuard.apk
+        run: |
+          APK=$(find app/build/outputs/apk -name "*.apk" 2>/dev/null | head -n 1)
+          if [ -z "$APK" ]; then
+            echo "::error::Gradle finished but produced no APK. Contents of app/build/outputs:"
+            ls -R app/build/outputs || echo "app/build/outputs does not exist"
+            exit 1
+          fi
+          echo "Found $APK"
+          cp "$APK" VocabGuard.apk
 
       - name: Publish release
         uses: softprops/action-gh-release@v2

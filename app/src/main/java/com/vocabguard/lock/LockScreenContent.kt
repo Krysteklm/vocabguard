@@ -507,7 +507,7 @@ private fun QuestionCard(frame: QuestionFrame, actions: QuizActions) {
             Text(
                 text = when (val q = frame.question) {
                     is QuizQuestion.Choice -> if (q.reversed) "Which word means this?" else "What does this mean?"
-                    is QuizQuestion.Typing -> "Type the translation"
+                    is QuizQuestion.Typing -> if (q.reversed) "Type the word" else "Type the translation"
                     is QuizQuestion.TrueFalse -> "Is this the right translation?"
                 },
                 style = MaterialTheme.typography.bodyMedium,
@@ -519,7 +519,7 @@ private fun QuestionCard(frame: QuestionFrame, actions: QuizActions) {
             when (val q = frame.question) {
                 is QuizQuestion.Choice -> ChoiceBody(q, frame, actions.onChoice)
                 is QuizQuestion.TrueFalse -> TrueFalseBody(q, frame, actions.onTruth)
-                is QuizQuestion.Typing -> TypingBody(frame, actions.onTyped)
+                is QuizQuestion.Typing -> TypingBody(frame, q.reversed, actions.onTyped)
             }
         }
     }
@@ -569,7 +569,7 @@ private fun TrueFalseBody(question: QuizQuestion.TrueFalse, frame: QuestionFrame
 }
 
 @Composable
-private fun TypingBody(frame: QuestionFrame, onTyped: (String) -> Unit) {
+private fun TypingBody(frame: QuestionFrame, reversed: Boolean, onTyped: (String) -> Unit) {
     var text by rememberSaveable(frame.number) { mutableStateOf("") }
     val focusRequester = remember { FocusRequester() }
     val submitted = frame.feedback != AnswerFeedback.None
@@ -593,7 +593,12 @@ private fun TypingBody(frame: QuestionFrame, onTyped: (String) -> Unit) {
         onValueChange = { if (!submitted && it.length <= 60) text = it },
         enabled = frame.enabled,
         singleLine = true,
-        placeholder = { Text("Your answer", color = VGColors.TextSecondary.copy(alpha = 0.6f)) },
+        placeholder = {
+            Text(
+                if (reversed) "Word, with its article" else "Your answer",
+                color = VGColors.TextSecondary.copy(alpha = 0.6f),
+            )
+        },
         shape = RoundedCornerShape(16.dp),
         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.None, imeAction = ImeAction.Done),
         keyboardActions = KeyboardActions(onDone = { if (canSubmit) onTyped(text) }),
@@ -610,6 +615,14 @@ private fun TypingBody(frame: QuestionFrame, onTyped: (String) -> Unit) {
             .fillMaxWidth()
             .focusRequester(focusRequester),
     )
+    if (reversed && !submitted) {
+        Spacer(Modifier.height(6.dp))
+        Text(
+            "Tip: hold a letter on the keyboard for ä, ö, ü or ß.",
+            style = MaterialTheme.typography.bodySmall,
+            color = VGColors.TextSecondary,
+        )
+    }
     Spacer(Modifier.height(12.dp))
     Button(
         onClick = { onTyped(text) },

@@ -66,7 +66,8 @@ class QuizRepository(
         return when (mode) {
             QuizMode.CHOICE -> choice(id, prompt = foreign, answer = native, others(reversed = false), reversed = false)
             QuizMode.REVERSE_CHOICE -> choice(id, prompt = native, answer = foreign, others(reversed = true), reversed = true)
-            QuizMode.TYPING -> QuizQuestion.Typing(id, foreign, native)
+            QuizMode.TYPING -> QuizQuestion.Typing(id, prompt = foreign, correctAnswer = native)
+            QuizMode.REVERSE_TYPING -> QuizQuestion.Typing(id, prompt = native, correctAnswer = foreign, reversed = true)
             QuizMode.TRUE_FALSE -> {
                 val wrong = others(reversed = false).firstOrNull()
                 val isMatch = wrong == null || random.nextBoolean()

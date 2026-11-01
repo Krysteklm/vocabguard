@@ -5,45 +5,57 @@ import java.util.Locale
 import kotlin.math.abs
 
 /**
- * Lenient comparison for typed answers: ignores case, accents and Polish/German special letters,
- * punctuation, text in parentheses and a leading "the/a/an/to". Accepts any of several meanings
- * separated by "/", ";" or ",". One typo is tolerated in answers of 5+ letters.
+ * Compares typed answers in two passes.
+ *
+ * Strict (counts as Correct): ignores case, punctuation, text in parentheses, extra spaces and a
+ * leading English "the/a/an/to". Several meanings separated by "/", ";" or "," are all accepted.
+ *
+ * Loose (counts as Almost: accepted, but the lock screen shows the exact spelling):
+ * - missing accents and special letters ("Schlussel" for "Schlüssel", "zolw" for "żółw", ss for ß)
+ * - a missing or different German article ("Hund" for "der Hund") or a missing "sich"
+ * - one typo in answers of 5+ letters
  */
 object AnswerChecker {
 
     enum class Verdict { Correct, Almost, Wrong }
 
-    private val ARTICLES = listOf("the ", "a ", "an ", "to ")
+    private val ENGLISH_PARTICLES = listOf("the ", "a ", "an ", "to ")
+    private val GERMAN_ARTICLES = listOf("der ", "die ", "das ", "den ", "dem ", "des ", "ein ", "eine ", "sich ")
     private val PARENTHESES = Regex("\\(.*?\\)")
     private val PUNCTUATION = Regex("[\\p{Punct}’‘“”«»„–—]")
     private val COMBINING_MARKS = Regex("\\p{Mn}+")
     private val WHITESPACE = Regex("\\s+")
 
     fun check(input: String, expected: String): Verdict {
-        val given = normalize(input)
-        if (given.isEmpty()) return Verdict.Wrong
-        val accepted = acceptedForms(expected)
+        val forms = (expected.split('/', ';', ',') + expected).filter { it.isNotBlank() }
+
+        val givenStrict = strict(input)
+        if (givenStrict.isEmpty()) return Verdict.Wrong
+        if (forms.any { strict(it) == givenStrict }) return Verdict.Correct
+
+        val givenLoose = loose(input)
+        val acceptedLoose = forms.map(::loose).filter { it.isNotEmpty() }
         return when {
-            given in accepted -> Verdict.Correct
-            accepted.any { it.length >= 5 && withinOneEdit(it, given) } -> Verdict.Almost
+            givenLoose.isNotEmpty() && givenLoose in acceptedLoose -> Verdict.Almost
+            acceptedLoose.any { it.length >= 5 && withinOneEdit(it, givenLoose) } -> Verdict.Almost
             else -> Verdict.Wrong
         }
     }
 
-    private fun acceptedForms(expected: String): Set<String> =
-        (expected.split('/', ';', ',') + expected)
-            .map(::normalize)
-            .filter { it.isNotEmpty() }
-            .toSet()
-
-    fun normalize(raw: String): String {
+    private fun strict(raw: String): String {
         var s = raw.lowercase(Locale.ROOT)
             .replace(PARENTHESES, " ")
-            .replace("ß", "ss")
-            .replace("ł", "l")
+            .replace(PUNCTUATION, " ")
+            .replace(WHITESPACE, " ")
+            .trim()
+        ENGLISH_PARTICLES.firstOrNull { s.startsWith(it) }?.let { s = s.removePrefix(it) }
+        return s.trim()
+    }
+
+    private fun loose(raw: String): String {
+        var s = strict(raw).replace("ß", "ss").replace("ł", "l")
         s = Normalizer.normalize(s, Normalizer.Form.NFD).replace(COMBINING_MARKS, "")
-        s = s.replace(PUNCTUATION, " ").replace(WHITESPACE, " ").trim()
-        ARTICLES.firstOrNull { s.startsWith(it) }?.let { s = s.removePrefix(it) }
+        GERMAN_ARTICLES.firstOrNull { s.startsWith(it) }?.let { s = s.removePrefix(it) }
         return s.trim()
     }
 

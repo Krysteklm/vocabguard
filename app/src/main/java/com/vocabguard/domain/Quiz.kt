@@ -10,6 +10,9 @@ enum class QuizMode {
     /** Foreign word -> type the translation. */
     TYPING,
 
+    /** Translation -> type the foreign word (e.g. see "klucz", write "der Schlüssel"). */
+    REVERSE_TYPING,
+
     /** "Word = meaning?" -> true / false. */
     TRUE_FALSE;
 
@@ -46,6 +49,8 @@ sealed interface QuizQuestion {
         override val wordId: Long,
         override val prompt: String,
         override val correctAnswer: String,
+        /** true = the prompt is the translation and the answer is the foreign word. */
+        val reversed: Boolean = false,
     ) : QuizQuestion
 
     data class TrueFalse(

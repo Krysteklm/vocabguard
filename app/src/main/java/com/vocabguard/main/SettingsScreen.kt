@@ -35,6 +35,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccessibilityNew
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Keyboard
 import androidx.compose.material.icons.rounded.Layers
@@ -92,7 +93,16 @@ private val QuizMode.info: QuizModeInfo
     get() = when (this) {
         QuizMode.CHOICE -> QuizModeInfo("Pick the translation", "See a word, choose its meaning from three.", Icons.Rounded.Translate)
         QuizMode.REVERSE_CHOICE -> QuizModeInfo("Pick the word", "See a meaning, choose the word from three.", Icons.Rounded.SwapHoriz)
-        QuizMode.TYPING -> QuizModeInfo("Type the translation", "Write it yourself. Small typos and missing accents are forgiven.", Icons.Rounded.Keyboard)
+        QuizMode.TYPING -> QuizModeInfo(
+            "Type the translation",
+            "See the word, write its meaning. Small typos and missing accents count as close.",
+            Icons.Rounded.Keyboard,
+        )
+        QuizMode.REVERSE_TYPING -> QuizModeInfo(
+            "Type the word",
+            "See the meaning, write the word itself. Hardest and best for remembering. A missing article or umlaut counts as close.",
+            Icons.Rounded.Edit,
+        )
         QuizMode.TRUE_FALSE -> QuizModeInfo("True or false", "Decide if a word and meaning match. Quickest, but easiest to guess.", Icons.Rounded.ThumbsUpDown)
     }
 

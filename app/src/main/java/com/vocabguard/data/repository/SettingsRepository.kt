@@ -16,6 +16,7 @@ import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.vocabguard.domain.CefrLevel
 import com.vocabguard.domain.QuizMode
+import com.vocabguard.domain.ReviewPace
 import com.vocabguard.util.epochDay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -53,6 +54,7 @@ data class AutoWordsSettings(
 data class GuardSettings(
     val blockerEnabled: Boolean = true,
     val quizModes: Set<QuizMode> = QuizMode.DEFAULT,
+    val reviewPace: ReviewPace = ReviewPace.DEFAULT,
     val today: DailyStats = DailyStats(),
     /** Multiplies the whole UI (layout and text) on top of the system font size. */
     val uiScale: Float = 1f,
@@ -68,6 +70,7 @@ class SettingsRepository(
     private object Keys {
         val BLOCKER_ENABLED = booleanPreferencesKey("blocker_enabled")
         val QUIZ_MODES = stringSetPreferencesKey("quiz_modes")
+        val REVIEW_PACE = stringPreferencesKey("review_pace")
         val STATS_DAY = longPreferencesKey("stats_epoch_day")
         val QUIZZES_SOLVED = intPreferencesKey("stats_quizzes_solved")
         val MINDFUL_EXITS = intPreferencesKey("stats_mindful_exits")
@@ -133,6 +136,10 @@ class SettingsRepository(
         dataStore.edit { prefs -> prefs[Keys.QUIZ_MODES] = modes.map { it.name }.toSet() }
     }
 
+    suspend fun setReviewPace(pace: ReviewPace) {
+        dataStore.edit { it[Keys.REVIEW_PACE] = pace.name }
+    }
+
     suspend fun recordQuizSolved() = increment(Keys.QUIZZES_SOLVED)
 
     suspend fun recordMindfulExit() = increment(Keys.MINDFUL_EXITS)
@@ -158,6 +165,7 @@ class SettingsRepository(
         return GuardSettings(
             blockerEnabled = this[Keys.BLOCKER_ENABLED] ?: true,
             quizModes = QuizMode.fromStored(this[Keys.QUIZ_MODES]),
+            reviewPace = ReviewPace.fromStored(this[Keys.REVIEW_PACE]),
             today = if (statsAreToday) {
                 DailyStats(
                     quizzesSolved = this[Keys.QUIZZES_SOLVED] ?: 0,

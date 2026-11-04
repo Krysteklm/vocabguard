@@ -73,6 +73,7 @@ import com.vocabguard.data.repository.AutoWordsSettings
 import com.vocabguard.data.repository.SettingsRepository
 import com.vocabguard.domain.CefrLevel
 import com.vocabguard.domain.QuizMode
+import com.vocabguard.domain.ReviewPace
 import com.vocabguard.sound.LocalSoundPlayer
 import com.vocabguard.sound.SoundPlayer
 import com.vocabguard.ui.components.PrimaryButton
@@ -151,9 +152,11 @@ fun SettingsScreen(state: MainUiState, viewModel: MainViewModel) {
             }
         }
 
-        AutoWordsCard(state = state, viewModel = viewModel, modifier = Modifier.appearOnce(4))
+        ReviewPaceCard(current = state.reviewPace, onSelect = viewModel::setReviewPace, modifier = Modifier.appearOnce(4))
 
-        Column(Modifier.appearOnce(5), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        AutoWordsCard(state = state, viewModel = viewModel, modifier = Modifier.appearOnce(5))
+
+        Column(Modifier.appearOnce(6), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             PermissionsSection(state.permissions)
         }
     }
@@ -237,6 +240,39 @@ private fun SoundsCard(enabled: Boolean, onChange: (Boolean) -> Unit, modifier: 
                         colors = chipColors(),
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReviewPaceCard(current: ReviewPace, onSelect: (ReviewPace) -> Unit, modifier: Modifier = Modifier) {
+    VGCard(modifier = modifier) {
+        Text("After a wrong answer", style = MaterialTheme.typography.titleMedium, color = VGColors.TextPrimary)
+        Text(
+            "How long the right answer stays on screen. You can always tap “Next question” to move on sooner.",
+            style = MaterialTheme.typography.bodySmall,
+            color = VGColors.TextSecondary,
+        )
+        Spacer(Modifier.height(12.dp))
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(ReviewPace.entries) { pace ->
+                FilterChip(
+                    selected = current == pace,
+                    onClick = { onSelect(pace) },
+                    label = {
+                        Text(
+                            when (pace) {
+                                ReviewPace.QUICK -> "1.5 s"
+                                ReviewPace.NORMAL -> "3 s"
+                                ReviewPace.SLOW -> "5 s"
+                                ReviewPace.MANUAL -> "Until I tap Next"
+                            },
+                        )
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = chipColors(),
+                )
             }
         }
     }

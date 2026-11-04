@@ -16,6 +16,7 @@ import com.vocabguard.data.repository.SettingsRepository
 import com.vocabguard.data.repository.WordRepository
 import com.vocabguard.domain.CefrLevel
 import com.vocabguard.domain.QuizMode
+import com.vocabguard.domain.ReviewPace
 import com.vocabguard.sound.SoundPlayer
 import com.vocabguard.util.PermissionUtils
 import kotlinx.coroutines.CancellationException
@@ -43,6 +44,7 @@ data class MainUiState(
     val loadFailed: Boolean = false,
     val blockerEnabled: Boolean = true,
     val quizModes: Set<QuizMode> = QuizMode.DEFAULT,
+    val reviewPace: ReviewPace = ReviewPace.DEFAULT,
     val todayStats: DailyStats = DailyStats(),
     val guardedApps: List<GuardedAppEntity> = emptyList(),
     val activeWordCount: Int = 0,
@@ -83,6 +85,7 @@ class MainViewModel(
             isLoading = false,
             blockerEnabled = settings.blockerEnabled,
             quizModes = settings.quizModes,
+            reviewPace = settings.reviewPace,
             todayStats = settings.today,
             guardedApps = apps,
             activeWordCount = activeWords,
@@ -124,6 +127,10 @@ class MainViewModel(
 
     fun setUiScale(scale: Float) = launchSafely("Couldn’t change the display size.") {
         settingsRepository.setUiScale(scale)
+    }
+
+    fun setReviewPace(pace: ReviewPace) = launchSafely("Couldn’t save that.") {
+        settingsRepository.setReviewPace(pace)
     }
 
     fun setSoundsEnabled(enabled: Boolean) = launchSafely("Couldn’t change sounds.") {

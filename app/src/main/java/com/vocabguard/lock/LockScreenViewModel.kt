@@ -15,6 +15,7 @@ import com.vocabguard.data.repository.SettingsRepository
 import com.vocabguard.domain.AnswerChecker
 import com.vocabguard.domain.QuizMode
 import com.vocabguard.domain.QuizQuestion
+import com.vocabguard.domain.ReviewPace
 import com.vocabguard.util.epochDay
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -48,6 +49,10 @@ data class LockUiState(
     val showBackHint: Boolean = false,
     val isUnlocking: Boolean = false,
     val isLeaving: Boolean = false,
+    /** A wrong/"close" answer is on screen; the "Next question" button is shown. */
+    val reviewing: Boolean = false,
+    /** Auto-advance time while reviewing, or null when waiting for the button. */
+    val reviewMillis: Long? = null,
 ) {
     val acceptsInput: Boolean
         get() = question != null && feedback == AnswerFeedback.None &&
@@ -74,12 +79,17 @@ class LockScreenViewModel(
 
     private var targetPackage: String? = null
     private var quizModes: Set<QuizMode> = QuizMode.DEFAULT
+    private var reviewPace: ReviewPace = ReviewPace.DEFAULT
+    private var advanceJob: Job? = null
+    private var pendingExcludeId: Long? = null
     private var configJob: Job? = null
     private var backHintJob: Job? = null
 
     init {
         viewModelScope.launch {
-            quizModes = attempt { settingsRepository.current().quizModes } ?: QuizMode.DEFAULT
+            val settings = attempt { settingsRepository.current() }
+            quizModes = settings?.quizModes ?: QuizMode.DEFAULT
+            reviewPace = settings?.reviewPace ?: ReviewPace.DEFAULT
             showNextQuestion(excludeWordId = null)
             // Today's auto-added words (if the feature is on) join from the next question.
             attempt { autoWordsRepository.runDailyIfDue() }
@@ -168,20 +178,44 @@ class LockScreenViewModel(
         viewModelScope.launch { attempt { quizRepository.recordAnswer(question, correct) } }
 
         viewModelScope.launch {
-            if (correct && newStreak >= state.requiredStreak) {
-                unlock()
-            } else {
-                delay(
-                    when {
-                        correct && !almost -> CORRECT_DELAY_MS
-                        correct -> ALMOST_DELAY_MS
-                        question is QuizQuestion.Typing -> WRONG_TYPING_DELAY_MS
-                        else -> WRONG_DELAY_MS
-                    },
-                )
-                showNextQuestion(excludeWordId = question.wordId)
+            when {
+                correct && newStreak >= state.requiredStreak -> unlock()
+                correct && !almost -> {
+                    delay(CORRECT_DELAY_MS)
+                    showNextQuestion(excludeWordId = question.wordId)
+                }
+                // Wrong or "close enough": keep the right answer on screen to learn from it.
+                else -> startReview(question)
             }
         }
+    }
+
+    /** "Next question" button: skips the remaining review time (or ends a manual review). */
+    fun onNextQuestion() {
+        if (!_uiState.value.reviewing) return
+        advanceJob?.cancel()
+        viewModelScope.launch { advance() }
+    }
+
+    private fun startReview(question: QuizQuestion) {
+        pendingExcludeId = question.wordId
+        // Typed answers take longer to compare with the correct spelling.
+        val millis = reviewPace.millis?.plus(if (question is QuizQuestion.Typing) TYPING_EXTRA_MS else 0L)
+        _uiState.update { it.copy(reviewing = true, reviewMillis = millis) }
+        advanceJob?.cancel()
+        if (millis != null) {
+            advanceJob = viewModelScope.launch {
+                delay(millis)
+                advance()
+            }
+        }
+    }
+
+    private suspend fun advance() {
+        // Timer and button can both fire; only the first one moves on.
+        if (!_uiState.value.reviewing) return
+        _uiState.update { it.copy(reviewing = false, reviewMillis = null) }
+        showNextQuestion(excludeWordId = pendingExcludeId)
     }
 
     private suspend fun unlock() {
@@ -222,9 +256,7 @@ class LockScreenViewModel(
     companion object {
         private const val TAG = "LockScreenViewModel"
         private const val CORRECT_DELAY_MS = 550L
-        private const val ALMOST_DELAY_MS = 1_300L
-        private const val WRONG_DELAY_MS = 1_400L
-        private const val WRONG_TYPING_DELAY_MS = 1_900L
+        private const val TYPING_EXTRA_MS = 500L
         private const val UNLOCK_CELEBRATION_MS = 750L
         private const val BACK_HINT_DURATION_MS = 2_500L
 

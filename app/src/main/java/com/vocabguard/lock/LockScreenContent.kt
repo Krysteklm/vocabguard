@@ -94,6 +94,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vocabguard.domain.QuizQuestion
+import com.vocabguard.ui.components.PrimaryButton
+import com.vocabguard.ui.components.ProgressTrack
 import com.vocabguard.sound.LocalSoundPlayer
 import com.vocabguard.sound.SoundPlayer
 import com.vocabguard.ui.components.rememberPressScale
@@ -138,6 +140,7 @@ fun LockScreenRoute(
             onTyped = viewModel::onTypedAnswer,
         ),
         onExit = viewModel::onExitRequested,
+        onNext = viewModel::onNextQuestion,
     )
 }
 
@@ -152,6 +155,7 @@ fun LockScreenContent(
     state: LockUiState,
     actions: QuizActions,
     onExit: () -> Unit,
+    onNext: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val haptics = LocalHapticFeedback.current
@@ -216,6 +220,7 @@ fun LockScreenContent(
 
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 FeedbackLine(state)
+                ReviewControls(state = state, onNext = onNext)
                 Spacer(Modifier.height(8.dp))
                 TextButton(onClick = onExit, enabled = !state.isUnlocking && !state.isLeaving) {
                     Text(
@@ -747,6 +752,40 @@ private fun OptionButton(
                         modifier = Modifier.size(20.dp),
                     )
                 }
+            }
+        }
+    }
+}
+
+/** "Next question" button plus, in timed mode, a bar that empties until the auto-advance. */
+@Composable
+private fun ReviewControls(state: LockUiState, onNext: () -> Unit) {
+    AnimatedVisibility(
+        visible = state.reviewing,
+        enter = fadeIn(tween(200)) + scaleIn(spring(dampingRatio = 0.8f), initialScale = 0.94f),
+        exit = fadeOut(tween(120)),
+    ) {
+        Column(
+            modifier = Modifier
+                .widthIn(max = 480.dp)
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            PrimaryButton(text = "Next question", onClick = onNext, modifier = Modifier.fillMaxWidth())
+            val millis = state.reviewMillis
+            if (millis != null) {
+                val remaining = remember(state.questionNumber) { Animatable(1f) }
+                LaunchedEffect(state.questionNumber, millis) {
+                    remaining.snapTo(1f)
+                    remaining.animateTo(0f, tween(durationMillis = millis.toInt(), easing = LinearEasing))
+                }
+                Spacer(Modifier.height(10.dp))
+                ProgressTrack(
+                    fraction = remaining.value,
+                    color = VGColors.TextSecondary,
+                    modifier = Modifier.padding(horizontal = 48.dp),
+                )
             }
         }
     }
